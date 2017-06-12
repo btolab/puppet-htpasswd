@@ -16,19 +16,19 @@ Puppet::Parser::Functions::newfunction(:ht_md5, :type => :rvalue, :doc => <<-EOS
 
     # from https://github.com/copiousfreetime/htauth/blob/master/lib/htauth/algorithm.rb
     # this is not the Base64 encoding, this is the to64() method from apr
-    SALT_CHARS = (%w[ . / ] + ("0".."9").to_a + ('A'..'Z').to_a + ('a'..'z').to_a).freeze
     def to_64(number, rounds)
+      salt_chars = (%w[ . / ] + ("0".."9").to_a + ('A'..'Z').to_a + ('a'..'z').to_a).freeze
       r = StringIO.new
       rounds.times do |x|
-        r.print(SALT_CHARS[number % 64])
+        r.print(salt_chars[number % 64])
         number >>= 6
       end
       return r.string
     end
 
     # from https://github.com/copiousfreetime/htauth/blob/master/lib/htauth/md5.rb
-    DIGEST_LENGTH = 16
     def encode(password, salt)
+      digest_length = 16
       prefix = '$apr1$'
 
       primary = ::Digest::MD5.new
@@ -40,9 +40,9 @@ Puppet::Parser::Functions::newfunction(:ht_md5, :type => :rvalue, :doc => <<-EOS
 
       l = password.length
       while l > 0 do
-        slice_size = ( l > DIGEST_LENGTH ) ? DIGEST_LENGTH : l
+        slice_size = ( l > digest_length ) ? digest_length : l
         primary << md5_t[0, slice_size]
-        l -= DIGEST_LENGTH
+        l -= digest_length
       end
 
       # weirdness
@@ -64,10 +64,10 @@ Puppet::Parser::Functions::newfunction(:ht_md5, :type => :rvalue, :doc => <<-EOS
       # apr_md5_encode has this comment about a 60Mhz Pentium above this loop.
       1000.times do |x|
         ctx = ::Digest::MD5.new
-        ctx << (( ( x & 1 ) == 1 ) ? password : pd[0,DIGEST_LENGTH])
+        ctx << (( ( x & 1 ) == 1 ) ? password : pd[0,digest_length])
         (ctx << salt) unless ( x % 3 ) == 0
         (ctx << password) unless ( x % 7 ) == 0
-        ctx << (( ( x & 1 ) == 0 ) ? password : pd[0,DIGEST_LENGTH])
+        ctx << (( ( x & 1 ) == 0 ) ? password : pd[0,digest_length])
         pd = ctx.digest
       end
 
