@@ -3,7 +3,7 @@
   "version": "0.0.3",
   "author": "Daniel De Marco",
   "summary": "htpasswd module",
-  "license": "Apache Version 2.0",
+  "license": "Apache-2.0",
   "source": "git://github.com/leinaddm/puppet-htpasswd",
   "project_page": "https://github.com/leinaddm/puppet-htpasswd",
   "dependencies": [

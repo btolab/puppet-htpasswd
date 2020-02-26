@@ -1,29 +1,39 @@
 require 'digest/md5'
 require 'stringio'
 
-Puppet::Parser::Functions::newfunction(:ht_md5, :type => :rvalue, :doc => <<-EOS
+module Puppet::Parser::Functions
+  newfunction(
+    :ht_md5,
+    type: :rvalue,
+    doc: <<-EOS
       encrypt a password using apache md5 algorithm. The first argument is the password and the second one the salt to use
     EOS
   ) do |args|
-    raise(Puppet::ParseError, "ht_md5(): Wrong number of arguments " +
-      "given (#{args.size} for 2)") if args.size != 2
+    if args.size != 2
+      raise(Puppet::ParseError, 'ht_md5(): Wrong number of arguments ' \
+        "given (#{args.size} for 2)")
+    end
 
     value = args[0]
     salt = args[1]
 
-    raise(Puppet::ParseError, 'ht_md5(): Requires a string to work with') unless value.class == String
-    raise(Puppet::ParseError, 'ht_md5(): Requires a string to work with') unless salt.class == String
+    unless value.class == String
+      raise(Puppet::ParseError, 'ht_md5(): Requires a string to work with')
+    end
+    unless salt.class == String
+      raise(Puppet::ParseError, 'ht_md5(): Requires a string to work with')
+    end
 
     # from https://github.com/copiousfreetime/htauth/blob/master/lib/htauth/algorithm.rb
     # this is not the Base64 encoding, this is the to64() method from apr
     def to_64(number, rounds)
-      salt_chars = (%w[ . / ] + ("0".."9").to_a + ('A'..'Z').to_a + ('a'..'z').to_a).freeze
+      salt_chars = (['.', '/'] + ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a).freeze
       r = StringIO.new
-      rounds.times do |x|
+      rounds.times do
         r.print(salt_chars[number % 64])
         number >>= 6
       end
-      return r.string
+      r.string
     end
 
     # from https://github.com/copiousfreetime/htauth/blob/master/lib/htauth/md5.rb
@@ -39,8 +49,8 @@ Puppet::Parser::Functions::newfunction(:ht_md5, :type => :rvalue, :doc => <<-EOS
       md5_t = ::Digest::MD5.digest("#{password}#{salt}#{password}")
 
       l = password.length
-      while l > 0 do
-        slice_size = ( l > digest_length ) ? digest_length : l
+      while l > 0
+        slice_size = (l > digest_length) ? digest_length : l
         primary << md5_t[0, slice_size]
         l -= digest_length
       end
@@ -52,7 +62,7 @@ Puppet::Parser::Functions::newfunction(:ht_md5, :type => :rvalue, :doc => <<-EOS
         when 1
           primary << 0.chr
         when 0
-          primary << password[0,1]
+          primary << password[0, 1]
         end
         l >>= 1
       end
@@ -64,32 +74,36 @@ Puppet::Parser::Functions::newfunction(:ht_md5, :type => :rvalue, :doc => <<-EOS
       # apr_md5_encode has this comment about a 60Mhz Pentium above this loop.
       1000.times do |x|
         ctx = ::Digest::MD5.new
-        ctx << (( ( x & 1 ) == 1 ) ? password : pd[0,digest_length])
-        (ctx << salt) unless ( x % 3 ) == 0
-        (ctx << password) unless ( x % 7 ) == 0
-        ctx << (( ( x & 1 ) == 0 ) ? password : pd[0,digest_length])
+        ctx << (((x & 1) == 1) ? password : pd[0, digest_length])
+        unless (x % 3).zero?
+          (ctx << salt)
+        end
+        unless (x % 7).zero?
+          (ctx << password)
+        end
+        ctx << ((x & 1).zero? ? password : pd[0, digest_length])
         pd = ctx.digest
       end
 
-
-      l = (pd[ 0].ord<<16) | (pd[ 6].ord<<8) | pd[12].ord
+      l = (pd[0].ord << 16) | (pd[6].ord << 8) | pd[12].ord
       encoded_password << to_64(l, 4)
 
-      l = (pd[ 1].ord<<16) | (pd[ 7].ord<<8) | pd[13].ord
+      l = (pd[1].ord << 16) | (pd[7].ord << 8) | pd[13].ord
       encoded_password << to_64(l, 4)
 
-      l = (pd[ 2].ord<<16) | (pd[ 8].ord<<8) | pd[14].ord
+      l = (pd[2].ord << 16) | (pd[8].ord << 8) | pd[14].ord
       encoded_password << to_64(l, 4)
 
-      l = (pd[ 3].ord<<16) | (pd[ 9].ord<<8) | pd[15].ord
+      l = (pd[3].ord << 16) | (pd[9].ord << 8) | pd[15].ord
       encoded_password << to_64(l, 4)
 
-      l = (pd[ 4].ord<<16) | (pd[10].ord<<8) | pd[ 5].ord
+      l = (pd[4].ord << 16) | (pd[10].ord << 8) | pd[5].ord
       encoded_password << to_64(l, 4)
-      encoded_password << to_64(pd[11].ord,2)
+      encoded_password << to_64(pd[11].ord, 2)
 
-      return encoded_password
+      encoded_password
     end
 
     encode(value, salt)
   end
+end
