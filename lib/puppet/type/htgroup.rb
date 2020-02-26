@@ -52,3 +52,4 @@ Puppet::Type.newtype(:htgroup) do
     end
   end
 end
+
