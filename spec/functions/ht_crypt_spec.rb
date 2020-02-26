@@ -1,23 +1,15 @@
 require 'spec_helper'
 
-describe 'ht_crypt' do
-  it 'does exist' do
-    Puppet::Parser::Functions.function('ht_crypt').does == 'function_ht_crypt'
-  end
+if Puppet.version.to_f >= 4.0
+  describe 'ht_crypt' do
+    it { is_expected.not_to eq(nil) }
+    it { is_expected.to run.with_params.and_raise_error(ArgumentError) }
+    it { is_expected.to run.with_params('', '').and_raise_error(ArgumentError) }
+    it { is_expected.to run.with_params('asd', 'erwe', 'asdas').and_raise_error(ArgumentError) }
+    it { is_expected.to run.with_params(42, 'asdas').and_raise_error(ArgumentError) }
 
-  it 'does raise a ParseError if there is less than 2 argument' do
-    is_expected.to run.with_params('testpassword').and_raise_error(Puppet::ParseError)
-  end
-
-  it 'does raise a ParseError if there is more than 2 arguments' do
-    is_expected.to run.with_params('testpassword', 'test2', 3).and_raise_error(Puppet::ParseError)
-  end
-
-  it 'does raise a ParseError if passed not a string' do
-    is_expected.to run.with_params(42, 'str').and_raise_error(Puppet::ParseError)
-  end
-
-  it 'does return crypt password' do
-    is_expected.to run.with_params('testpassword', '46').and_return('46ursI0BCy7gc')
+    it 'does return a MD5 hash' do
+      is_expected.to run.with_params('testpassword', 'aPhT5FuSg').and_return('aPArO4B5ImZAY')
+    end
   end
 end
