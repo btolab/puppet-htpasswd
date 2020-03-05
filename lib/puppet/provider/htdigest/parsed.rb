@@ -14,7 +14,7 @@ Puppet::Type.type(:htdigest).provide(
             match: %r{^\s*$}
   text_line :comment,
             match: %r{^#},
-            post_parse: proc {|record|
+            post_parse: proc { |record|
               if record[:line] =~ %r{Puppet Name: (.+)\s*$}
                 record[:name] = Regex.last_match(1)
               end
