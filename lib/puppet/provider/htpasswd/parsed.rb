@@ -13,11 +13,11 @@ Puppet::Type.type(:htpasswd).provide(
   text_line :blank, match: %r{^\s*$}
   text_line :comment,
             match:      %r{^#},
-            post_parse: proc do |record|
+            post_parse: proc { |record|
               if record[:line] =~ %r{Puppet Name: (.+)\s*$}
                 record[:name] = Regexp.last_match(1)
               end
-            end
+            }
   record_line :parsed,
               fields:     ['username', 'cryptpasswd'],
               joiner:     ':',
